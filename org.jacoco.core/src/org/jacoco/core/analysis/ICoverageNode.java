@@ -63,7 +63,10 @@ public interface ICoverageNode {
 		METHOD,
 
 		/** Counter for classes */
-		CLASS
+		CLASS,
+
+		/** Counter for acyclic paths */
+		ACYCLIC_PATH
 	}
 
 	/**
@@ -121,6 +124,13 @@ public interface ICoverageNode {
 	 * @return counter for classes
 	 */
 	public ICounter getClassCounter();
+
+	/**
+	 * Returns the counter for acyclic paths.
+	 *
+	 * @return counter for acyclic paths
+	 */
+	public ICounter getAcyclicPathCounter();
 
 	/**
 	 * Generic access to the the counters.
