@@ -9,83 +9,111 @@ import java.util.*;
  */
 public class InstructionTreeBuilder {
 
-    private Set<Edge> allEdges;
-    private List<Node> allNodes;
+    private Set<Edge> allEdges = null;
+    private List<Node> allNodes = null;
+    private Set<Edge> customSpanningTree = null;
+    private Set<Node> leafs = null;
     private LinkedHashMap<Instruction, Node> instToNodeMap;
     private Node entry;
     private Node exit;
 
-    private void buildInstructionToNodeMap(List<Instruction> instructions) {
-        char label = 'A';
-        this.allNodes = new LinkedList<Node>();
-        this.instToNodeMap = new LinkedHashMap<Instruction, Node>();
-        for(Instruction instruction : instructions){
-            Node node = new Node();
-            node.label = label;
-            instToNodeMap.put(instruction, node);
-            label++;
-            allNodes.add(node);
-        }
+    public void setAllEdges(Set<Edge> allEdges) {
+        this.allEdges = allEdges;
     }
 
-    private Set<Node> buildTestNodes() {
-        Set<Node> leafs = new HashSet<Node>();
-        Map<Character, Node> labelsMap = new HashMap<Character, Node>();
-        char label = 'A';
-        this.allNodes = new LinkedList<Node>();
-        this.instToNodeMap = new LinkedHashMap<Instruction, Node>();
-        this.allEdges = new HashSet<Edge>();
-        for(int i =0;i<9;i++){
-            Node node = new Node();
-            node.label = label;
-            this.allNodes.add(node);
-            labelsMap.put(label,node);
-            label++;
+    public void setAllNodes(List<Node> allNodes) {
+        this.allNodes = allNodes;
+    }
+
+    public void setCustomSpanningTree(Set<Edge> customSpanningTree) {
+        this.customSpanningTree = customSpanningTree;
+    }
+
+    public void setLeafs(Set<Node> leafs) {
+        this.leafs = leafs;
+    }
+
+    public List<String> getAcyclicPaths(){
+        if (this.allNodes == null){
+            throw new RuntimeException("Three is not defined");
         }
-        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('B')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('F')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('B'), labelsMap.get('C')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('B'), labelsMap.get('D')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('C'), labelsMap.get('E')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('D'), labelsMap.get('E')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('E'), labelsMap.get('F')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('E'), labelsMap.get('B')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('G')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('H')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('G'), labelsMap.get('I')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('H'), labelsMap.get('I')));
-        leafs.add(this.allNodes.get(this.allNodes.size()-1));
+        //Get all edges
+        if (this.allEdges == null){
+            this.allEdges = getAllEdges();
+        }
+        //Detect leafs
+        if(this.leafs == null){
+            this.leafs = detectLeafs();
+        }
+        //Detect backedges
+        this.entry = this.allNodes.get(0);
+        if(this.leafs.size() > 1){
+            this.exit = getEndNode(leafs);
+            this.allNodes.add(this.exit);
+        }
+        else{
+            this.exit = this.allNodes.get(this.allNodes.size()-1);
+        }
+
+        Set<Edge> backedges = detectBackEdges(this.entry,
+                new HashSet<Edge>(),
+                new HashSet<Node>());
+        //Replace backedges
+        Set<Edge> dummyEdges = replaceBackedges(backedges);
+        //Weights calculation
+        calculateWeights();
+        //Build spanning tree
+        Set<Edge> spanningTree;
+        //Add exit to entry edge
+        Edge exitToEntryEdge = Edge.createEdge(exit,entry);
+        this.allEdges.add(exitToEntryEdge);
+        if (this.customSpanningTree == null){
+            spanningTree = buildSpanningTree(exit,
+                    allNodes.size(),
+                    new HashSet<Edge>(),
+                    new HashSet<Node>());
+        }
+        else {
+            spanningTree = this.customSpanningTree;
+            spanningTree.add(exitToEntryEdge);
+        }
+        //compute inc values
+        Set<Edge> chords = new HashSet<Edge>(allEdges);
+        chords.removeAll(spanningTree);
+        for (Edge chord : chords){
+            Stack<Edge> cycle = new Stack<Edge>();
+            findCycle(chord.from,chord.to,new HashSet<Edge>(spanningTree),cycle);
+            chord.inc += chord.weight;
+            for(Edge cycleEdge : cycle){
+                chord.inc += cycleEdge.weight;
+            }
+        }
+        //paths regeneration
+        List<String> paths = new ArrayList<String>();
+        for(int i = 0; i < entry.numPaths; i++){
+            StringBuilder builder = getPath(i,new StringBuilder(),entry,dummyEdges,exit);
+            paths.add(builder.toString().replace("@",""));
+        }
+        return paths;
+    }
+
+    private Set<Node> detectLeafs(){
+        Set<Node> leafs = new HashSet<Node>(this.allNodes);
+        for(Edge edge : this.allEdges){
+            leafs.remove(edge.from);
+        }
         return leafs;
     }
 
-    private Set<Node> buildTestNodes2() {
-        Set<Node> leafs = new HashSet<Node>();
-        Map<Character, Node> labelsMap = new HashMap<Character, Node>();
-        char label = 'A';
-        this.allNodes = new LinkedList<Node>();
-        this.instToNodeMap = new LinkedHashMap<Instruction, Node>();
-        this.allEdges = new HashSet<Edge>();
-        for(int i =0;i<8;i++){
-            Node node = new Node();
-            node.label = label;
-            this.allNodes.add(node);
-            labelsMap.put(label,node);
-            label++;
+    private Set<Edge> getAllEdges(){
+        Set<Edge> allEdges = new HashSet<Edge>();
+        for(Node node : this.allNodes){
+            for(Edge edge : node.edges){
+                allEdges.add(edge);
+            }
         }
-        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('B')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('C')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('B'), labelsMap.get('D')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('C'), labelsMap.get('D')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('D'), labelsMap.get('E')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('D'), labelsMap.get('F')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('E'), labelsMap.get('G')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('G')));
-        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('H')));
-        leafs.add(this.allNodes.get(this.allNodes.size()-1));
-        leafs.add(this.allNodes.get(this.allNodes.size()-2));
-        return leafs;
+        return allEdges;
     }
-
 
     //Modified DFS
     private Set<Edge> detectBackEdges(Node current,
@@ -110,60 +138,7 @@ public class InstructionTreeBuilder {
         return backedges;
     }
 
-    public List<String> getAcyclicPaths(List<Instruction> instructions){
-       /* //Build map
-        buildInstructionToNodeMap(instructions);
-        //Build tree
-        this.allEdges = new HashSet<Edge>();
-        Set<Node> leafs = initialiseEdges(instructions);*/
-        //Detect backedges
-        Set<Node> leafs = buildTestNodes2();
-        this.entry = this.allNodes.get(0);
-        if(leafs.size() > 1){
-            this.exit = getEndNode(leafs);
-            this.allNodes.add(this.exit);
-        }
-        else{
-            this.exit = this.allNodes.get(this.allNodes.size()-1);
-        }
 
-        Set<Edge> backedges = detectBackEdges(this.entry,
-                                              new HashSet<Edge>(),
-                                              new HashSet<Node>());
-        //Replace backedges
-        Set<Edge> dummyEdges = replaceBackedges(backedges);
-        //Weights calculation
-        calculateWeights();
-        //Add exit to entry edge
-        Edge exitToEntryEdge = new Edge();
-        exitToEntryEdge.from = exit;
-        exitToEntryEdge.to = entry;
-        exitToEntryEdge.from.edges.add(exitToEntryEdge);
-        exitToEntryEdge.to.edges.add(exitToEntryEdge);
-        //Build spanning tree
-        Set<Edge> spanningTree = buildSpanningTree(exit,
-                                                   allNodes.size(),
-                                                   new HashSet<Edge>(),
-                                                   new HashSet<Node>());
-        //compute inc values
-        Set<Edge> chords = new HashSet<Edge>(allEdges);
-        chords.removeAll(spanningTree);
-        for (Edge chord : chords){
-            Queue<Edge> cycle = new LinkedList<Edge>();
-            findCycle(chord.from,chord.to,new HashSet<Edge>(spanningTree),cycle);
-            chord.inc += chord.weight;
-            for(Edge cycleEdge : cycle){
-                chord.inc += cycleEdge.weight;
-            }
-        }
-        //paths regeneration
-        List<String> paths = new ArrayList<String>();
-        for(int i = 0; i < entry.numPaths; i++){
-            StringBuilder builder = getPath(i,new StringBuilder(),entry,dummyEdges,exit);
-            paths.add(builder.toString().replace("@",""));
-        }
-        return paths;
-    }
 
     private void calculateWeights() {
         ListIterator<Node> li = this.allNodes.listIterator(this.allNodes.size());
@@ -188,20 +163,13 @@ public class InstructionTreeBuilder {
     private Set<Edge> replaceBackedges(Set<Edge> backedges) {
         Set<Edge> dummpyEdges = new HashSet<Edge>();
         for(Edge backedge : backedges){
-            Edge dummyEdgeEntry = new Edge();
-            dummyEdgeEntry.from = entry;
-            dummyEdgeEntry.to = backedge.to;
-            this.entry.edges.add(dummyEdgeEntry);
-            Edge dummyEdgeExit = new Edge();
-            dummyEdgeExit.from = backedge.from;
-            dummyEdgeExit.to = exit;
-            this.exit.edges.add(dummyEdgeExit);
+            Edge dummyEdgeEntry = Edge.createEdge(entry,backedge.to);
+            this.allEdges.add(dummyEdgeEntry);
+            Edge dummyEdgeExit = Edge.createEdge(backedge.from,exit);
+            this.allEdges.add(dummyEdgeExit);
             dummpyEdges.add(dummyEdgeEntry);
             dummpyEdges.add(dummyEdgeExit);
-            backedge.from.edges.add(dummyEdgeExit);
-            backedge.to.edges.add(dummyEdgeEntry);
-            backedge.from.edges.remove(backedge);
-            backedge.to.edges.remove(backedge);
+            this.allEdges.remove(backedge);
         }
         return dummpyEdges;
     }
@@ -258,22 +226,26 @@ public class InstructionTreeBuilder {
         return getPath(R-maxEdge.weight,builder,maxEdge.to,dummyEdges,exit);
     }
 
-    private void findCycle(Node start,
+    private Stack<Edge> findCycle(Node start,
                            Node current,
                            Set<Edge> spanningTree,
-                           Queue<Edge> cycle){
+                           Stack<Edge> cycle){
         if(current == start){
-            return;
+            return cycle;
         }
         for(Edge edge : current.edges){
             if(spanningTree.contains(edge)){
                 cycle.add(edge);
                 spanningTree.remove(edge);
                 Node next = edge.from == current ? edge.to : edge.from;
-                findCycle(start, next, spanningTree, cycle);
+                Stack<Edge> stack = findCycle(start, next, spanningTree, cycle);
+                if(stack != null){
+                    return stack;
+                }
             }
         }
-        cycle.poll();
+        cycle.pop();
+        return null;
     }
 
     //Modified DFS
@@ -301,13 +273,13 @@ public class InstructionTreeBuilder {
 
 
 
-    private static class Node {
-        char label;
-        int numPaths;
-        List<Edge> edges = new LinkedList<Edge>();
+    public static class Node {
+        public char label;
+        public int numPaths;
+        public List<Edge> edges = new LinkedList<Edge>();
     }
 
-    private static class Edge {
+    public static class Edge {
         public Edge() {
         }
 
@@ -320,9 +292,9 @@ public class InstructionTreeBuilder {
             return edge;
         }
 
-        Node from;
-        Node to;
-        int weight = 0;
-        int inc = 0;
+        public Node from;
+        public Node to;
+        public int weight = 0;
+        public int inc = 0;
     }
 }
