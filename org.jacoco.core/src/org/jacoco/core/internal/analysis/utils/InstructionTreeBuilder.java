@@ -8,84 +8,98 @@ import java.util.*;
  * Created by abuca on 24.02.17.
  */
 public class InstructionTreeBuilder {
-    public static List<String> buildInstructionsTree(List<Instruction> instructions){
-        //Build map
+
+    private Set<Edge> allEdges;
+    private List<Node> allNodes;
+    private LinkedHashMap<Instruction, Node> instToNodeMap;
+    private Node entry;
+    private Node exit;
+
+    private void buildInstructionToNodeMap(List<Instruction> instructions) {
         char label = 'A';
-        Map<Instruction, Node> instToNodeMap = new LinkedHashMap<Instruction, Node>();
+        this.allNodes = new LinkedList<Node>();
+        this.instToNodeMap = new LinkedHashMap<Instruction, Node>();
         for(Instruction instruction : instructions){
             Node node = new Node();
             node.label = label;
             instToNodeMap.put(instruction, node);
             label++;
+            allNodes.add(node);
         }
-        //Build tree
-        ListIterator<Instruction> li = instructions.listIterator(instructions.size());
-        Set<Node> leafs = new HashSet<Node>(instToNodeMap.values());
-        Set<Edge> allEdges = new HashSet<Edge>();
-        while(li.hasPrevious()){
-            Instruction currentInstruction = li.previous();
-            Node currentNode  = instToNodeMap.get(currentInstruction);
-            if(currentInstruction.getPredecessor() != null){
-                Edge edge = new Edge();
-                edge.from = instToNodeMap.get(currentInstruction.getPredecessor());
-                edge.to = currentNode;
-                edge.from.edges.add(edge);
-                edge.to.edges.add(edge);
-                leafs.remove(edge.from);
-                allEdges.add(edge);
-            }
-        }
-        //Detect backedges
-        Node entry = instToNodeMap.get(instructions.get(0));
-        Node exit = new Node();
-        exit.label = label;
-        for(Node leaf : leafs){
-            Edge edge = new Edge();
-            edge.from = leaf;
-            edge.to = exit;
-            edge.from.edges.add(edge);
-            edge.to.edges.add(edge);
-        }
+    }
 
-        Set<Edge> backedges = new HashSet<Edge>();
-        detectBackEdges(entry,
-                        exit,
-                        backedges,
-                        new HashSet<Node>());
-        //Replace backedges
-        Set<Edge> dummpyEdges = new HashSet<Edge>();
-        for(Edge backedge : backedges){
-            Edge dummyEdgeEntry = new Edge();
-            dummyEdgeEntry.from = entry;
-            dummyEdgeEntry.to = backedge.to;
-            Edge dummyEdgeExit = new Edge();
-            dummyEdgeExit.from = backedge.from;
-            dummyEdgeExit.to = exit;
-            dummpyEdges.add(dummyEdgeEntry);
-            dummpyEdges.add(dummyEdgeExit);
-            backedge.from.edges.add(dummyEdgeExit);
-            backedge.to.edges.add(dummyEdgeEntry);
-            backedge.from.edges.remove(backedge);
-            backedge.to.edges.remove(backedge);
+    private Set<Node> buildTestNodes() {
+        Set<Node> leafs = new HashSet<Node>();
+        Map<Character, Node> labelsMap = new HashMap<Character, Node>();
+        char label = 'A';
+        this.allNodes = new LinkedList<Node>();
+        this.instToNodeMap = new LinkedHashMap<Instruction, Node>();
+        this.allEdges = new HashSet<Edge>();
+        for(int i =0;i<9;i++){
+            Node node = new Node();
+            node.label = label;
+            this.allNodes.add(node);
+            labelsMap.put(label,node);
+            label++;
         }
-        //Weights calculation
-        li = instructions.listIterator(instructions.size());
-        while(li.hasPrevious()){
-            Instruction currentInstruction = li.previous();
-            final Node currentNode  = instToNodeMap.get(currentInstruction);
-            if(leafs.contains(currentNode)){
-                currentNode.numPaths = 1;
-            }
-            else{
-                currentNode.numPaths = 0;
-                for(Edge edge : currentNode.edges){
-                    if (edge.from == currentNode){
-                        edge.weight = edge.from.numPaths;
-                        edge.from.numPaths = edge.from.numPaths + edge.to.numPaths;
-                    }
+        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('B')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('F')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('B'), labelsMap.get('C')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('B'), labelsMap.get('D')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('C'), labelsMap.get('E')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('D'), labelsMap.get('E')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('E'), labelsMap.get('F')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('E'), labelsMap.get('B')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('G')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('H')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('G'), labelsMap.get('I')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('H'), labelsMap.get('I')));
+        leafs.add(this.allNodes.get(this.allNodes.size()-1));
+        return leafs;
+    }
+
+
+    //Modified DFS
+    private Set<Edge> detectBackEdges(Node current,
+                                     Set<Edge> backedges,
+                                     Set<Node> visitedSet){
+        if(current == this.exit){
+            return backedges;
+        }
+        visitedSet.add(current);
+        for(Edge edge : current.edges){
+            if(edge.from == current){
+                if(visitedSet.contains(edge.to)){
+                    backedges.add(edge);
+                }
+                else{
+                    backedges = detectBackEdges(edge.to,
+                                                backedges,
+                                                new HashSet<Node>(visitedSet));
                 }
             }
         }
+        return backedges;
+    }
+
+    public List<String> getAcyclicPaths(List<Instruction> instructions){
+       /* //Build map
+        buildInstructionToNodeMap(instructions);
+        //Build tree
+        this.allEdges = new HashSet<Edge>();
+        Set<Node> leafs = initialiseEdges(instructions);*/
+        //Detect backedges
+        Set<Node> leafs = buildTestNodes();
+        this.entry = this.allNodes.get(0);
+        this.exit = getEndNode(leafs);
+
+        Set<Edge> backedges = detectBackEdges(this.entry,
+                                              new HashSet<Edge>(),
+                                              new HashSet<Node>());
+        //Replace backedges
+        Set<Edge> dummyEdges = replaceBackedges(backedges);
+        //Weights calculation
+        calculateWeights(leafs);
         //Add exit to entry edge
         Edge exitToEntryEdge = new Edge();
         exitToEntryEdge.from = exit;
@@ -93,11 +107,10 @@ public class InstructionTreeBuilder {
         exitToEntryEdge.from.edges.add(exitToEntryEdge);
         exitToEntryEdge.to.edges.add(exitToEntryEdge);
         //Build spanning tree
-        Set<Edge> spanningTree = new HashSet<Edge>();
-        buildSpanningTree(exit,
-                          instToNodeMap.size(),
-                          spanningTree,
-                          new HashSet<Node>());
+        Set<Edge> spanningTree = buildSpanningTree(exit,
+                                                   allNodes.size(),
+                                                   new HashSet<Edge>(),
+                                                   new HashSet<Node>());
         //compute inc values
         Set<Edge> chords = new HashSet<Edge>(allEdges);
         chords.removeAll(spanningTree);
@@ -112,18 +125,90 @@ public class InstructionTreeBuilder {
         //paths regeneration
         List<String> paths = new ArrayList<String>();
         for(int i = 0; i < entry.numPaths; i++){
-            StringBuilder builder = new StringBuilder();
-            getPath(i,builder,entry,dummpyEdges,exit);
+            StringBuilder builder = getPath(i,new StringBuilder(),entry,dummyEdges,exit);
             paths.add(builder.toString());
         }
         return paths;
     }
 
-    private static void getPath(int R, StringBuilder builder, Node currentNode, Set<Edge> dummyEdges, Node exit){
+    private void calculateWeights(Set<Node> leafs) {
+        ListIterator<Node> li = this.allNodes.listIterator(this.allNodes.size());
+        while(li.hasPrevious()){
+            final Node currentNode = li.previous();
+            if(leafs.contains(currentNode)){
+                currentNode.numPaths = 1;
+            }
+            else{
+                currentNode.numPaths = 0;
+                for(Edge edge : currentNode.edges){
+                    if (edge.from == currentNode){
+                        edge.weight = edge.from.numPaths;
+                        currentNode.numPaths = currentNode.numPaths + edge.to.numPaths;
+                    }
+                }
+            }
+        }
+    }
+
+    private Set<Edge> replaceBackedges(Set<Edge> backedges) {
+        Set<Edge> dummpyEdges = new HashSet<Edge>();
+        for(Edge backedge : backedges){
+            Edge dummyEdgeEntry = new Edge();
+            dummyEdgeEntry.from = entry;
+            dummyEdgeEntry.to = backedge.to;
+            this.entry.edges.add(dummyEdgeEntry);
+            Edge dummyEdgeExit = new Edge();
+            dummyEdgeExit.from = backedge.from;
+            dummyEdgeExit.to = exit;
+            this.exit.edges.add(dummyEdgeExit);
+            dummpyEdges.add(dummyEdgeEntry);
+            dummpyEdges.add(dummyEdgeExit);
+            backedge.from.edges.add(dummyEdgeExit);
+            backedge.to.edges.add(dummyEdgeEntry);
+            backedge.from.edges.remove(backedge);
+            backedge.to.edges.remove(backedge);
+        }
+        return dummpyEdges;
+    }
+
+    private Node getEndNode(Set<Node> leafs) {
+        Node exit = new Node();
+        exit.label = 'A';
+        exit.label--;
+        for(Node leaf : leafs){
+            Edge edge = new Edge();
+            edge.from = leaf;
+            edge.to = exit;
+            edge.from.edges.add(edge);
+            edge.to.edges.add(edge);
+        }
+        return exit;
+    }
+
+    private Set<Node> initialiseEdges(List<Instruction> instructions) {
+        Set<Node> leafs = new HashSet<Node>(instToNodeMap.values());
+        ListIterator<Instruction> li = instructions.listIterator(instructions.size());
+        while(li.hasPrevious()){
+            Instruction currentInstruction = li.previous();
+            Node currentNode  = instToNodeMap.get(currentInstruction);
+            if(currentInstruction.getPredecessor() != null){
+                Edge edge = new Edge();
+                edge.from = instToNodeMap.get(currentInstruction.getPredecessor());
+                edge.to = currentNode;
+                edge.from.edges.add(edge);
+                edge.to.edges.add(edge);
+                leafs.remove(edge.from);
+                allEdges.add(edge);
+            }
+        }
+        return leafs;
+    }
+
+    private StringBuilder getPath(int R, StringBuilder builder, Node currentNode, Set<Edge> dummyEdges, Node exit){
         Edge maxEdge = new Edge();
         maxEdge.weight = - 1000;
         if(currentNode == exit){
-            return;
+            return builder;
         }
         for(Edge edge : currentNode.edges){
             if(edge.from == currentNode && edge.weight > maxEdge.weight && edge.weight <= R){
@@ -133,10 +218,10 @@ public class InstructionTreeBuilder {
         if(!dummyEdges.contains(maxEdge)){
             builder.append(currentNode.label);
         }
-        getPath(R-maxEdge.weight,builder,maxEdge.to,dummyEdges,exit);
+        return getPath(R-maxEdge.weight,builder,maxEdge.to,dummyEdges,exit);
     }
 
-    private static void findCycle(Node start,
+    private void findCycle(Node start,
                            Node current,
                            Set<Edge> spanningTree,
                            Queue<Edge> cycle){
@@ -155,12 +240,12 @@ public class InstructionTreeBuilder {
     }
 
     //Modified DFS
-    private static void buildSpanningTree(Node current,
-                                          Integer nodesCount,
-                                          Set<Edge> spanningTree,
-                                          Set<Node> visitedSet){
+    private Set<Edge> buildSpanningTree(Node current,
+                                  Integer nodesCount,
+                                  Set<Edge> spanningTree,
+                                  Set<Node> visitedSet){
         if(visitedSet.size() == nodesCount){
-            return;
+            return spanningTree;
         }
         visitedSet.add(current);
         for(Edge edge : current.edges){
@@ -174,31 +259,10 @@ public class InstructionTreeBuilder {
                 }
             }
         }
+        return spanningTree;
     }
 
-    //Modified DFS
-    private static void detectBackEdges(Node current,
-                                        Node end,
-                                        Set<Edge> backedges,
-                                        Set<Node> visitedSet){
-        if(current == end){
-            return;
-        }
-        visitedSet.add(current);
-        for(Edge edge : current.edges){
-            if(edge.from == current){
-                if(visitedSet.contains(edge.to)){
-                    backedges.add(edge);
-                }
-                else{
-                    detectBackEdges(edge.to,
-                                    end,
-                                    backedges,
-                                    new HashSet<Node>(visitedSet));
-                }
-            }
-        }
-    }
+
 
     private static class Node {
         char label;
@@ -207,6 +271,18 @@ public class InstructionTreeBuilder {
     }
 
     private static class Edge {
+        public Edge() {
+        }
+
+        public static Edge createEdge(Node from, Node to){
+            Edge edge = new Edge();
+            edge.from = from;
+            edge.from.edges.add(edge);
+            edge.to = to;
+            edge.to.edges.add(edge);
+            return edge;
+        }
+
         Node from;
         Node to;
         int weight = 0;
