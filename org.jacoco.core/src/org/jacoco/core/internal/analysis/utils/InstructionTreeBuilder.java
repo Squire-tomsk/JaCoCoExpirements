@@ -8,7 +8,7 @@ import java.util.*;
  * Created by abuca on 24.02.17.
  */
 public class InstructionTreeBuilder {
-    public static void buildInstructionsTree(List<Instruction> instructions){
+    public static List<String> buildInstructionsTree(List<Instruction> instructions){
         //Build map
         char label = 'A';
         Map<Instruction, Node> instToNodeMap = new LinkedHashMap<Instruction, Node>();
@@ -116,7 +116,7 @@ public class InstructionTreeBuilder {
             getPath(i,builder,entry,dummpyEdges,exit);
             paths.add(builder.toString());
         }
-        paths.clear();
+        return paths;
     }
 
     private static void getPath(int R, StringBuilder builder, Node currentNode, Set<Edge> dummyEdges, Node exit){
