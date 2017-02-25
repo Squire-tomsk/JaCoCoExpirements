@@ -63,8 +63,8 @@ public class InstructionTreeBuilderTest {
         allEdges.add(InstructionTreeBuilder.Edge.createEdge(labelsMap.get('H'), labelsMap.get('I')));
         leafs.add(allNodes.get(allNodes.size()-1));
 
-        this.instructionTreeBuilder.setLeafs(leafs);
-        this.instructionTreeBuilder.setAllEdges(allEdges);
+        //this.instructionTreeBuilder.setLeafs(leafs);
+        //this.instructionTreeBuilder.setAllEdges(allEdges);
         this.instructionTreeBuilder.setAllNodes(allNodes);
     }
 
@@ -93,8 +93,8 @@ public class InstructionTreeBuilderTest {
         leafs.add(allNodes.get(allNodes.size()-1));
         leafs.add(allNodes.get(allNodes.size()-2));
 
-        instructionTreeBuilder.setLeafs(leafs);
-        instructionTreeBuilder.setAllEdges(allEdges);
+        //instructionTreeBuilder.setLeafs(leafs);
+        //instructionTreeBuilder.setAllEdges(allEdges);
         instructionTreeBuilder.setAllNodes(allNodes);
     }
 
@@ -141,14 +141,14 @@ public class InstructionTreeBuilderTest {
         edge.weight = 0;
         allEdges.add(edge);
         customSpanningTree.add(edge);
-        edge = InstructionTreeBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('A'));
-        edge.weight = 0;
-        allEdges.add(edge);
-        customSpanningTree.add(edge);
+//        edge = InstructionTreeBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('A'));
+//        edge.weight = 0;
+//        allEdges.add(edge);
+//        customSpanningTree.add(edge);
         leafs.add(allNodes.get(allNodes.size()-1));
 
-        instructionTreeBuilder.setLeafs(leafs);
-        instructionTreeBuilder.setAllEdges(allEdges);
+        ///instructionTreeBuilder.setLeafs(leafs);
+        //instructionTreeBuilder.setAllEdges(allEdges);
         instructionTreeBuilder.setAllNodes(allNodes);
         instructionTreeBuilder.setCustomSpanningTree(customSpanningTree);
     }

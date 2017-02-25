@@ -16,6 +16,9 @@ public class InstructionTreeBuilder {
     private LinkedHashMap<Instruction, Node> instToNodeMap;
     private Node entry;
     private Node exit;
+    private Set<Edge> chords;
+    private List<String> paths;
+
 
     public void setAllEdges(Set<Edge> allEdges) {
         this.allEdges = allEdges;
@@ -61,7 +64,12 @@ public class InstructionTreeBuilder {
         //Replace backedges
         Set<Edge> dummyEdges = replaceBackedges(backedges);
         //Weights calculation
-        calculateWeights();
+        if(this.customSpanningTree == null){
+            calculateWeights();
+        }
+        else{
+            restoreNumPaths();
+        }
         //Build spanning tree
         Set<Edge> spanningTree;
         //Add exit to entry edge
@@ -78,7 +86,7 @@ public class InstructionTreeBuilder {
             spanningTree.add(exitToEntryEdge);
         }
         //compute inc values
-        Set<Edge> chords = new HashSet<Edge>(allEdges);
+        chords = new HashSet<Edge>(allEdges);
         chords.removeAll(spanningTree);
         for (Edge chord : chords){
             Stack<Edge> cycle = new Stack<Edge>();
@@ -89,7 +97,7 @@ public class InstructionTreeBuilder {
             }
         }
         //paths regeneration
-        List<String> paths = new ArrayList<String>();
+        paths = new ArrayList<String>();
         for(int i = 0; i < entry.numPaths; i++){
             StringBuilder builder = getPath(i,new StringBuilder(),entry,dummyEdges,exit);
             paths.add(builder.toString().replace("@",""));
@@ -152,11 +160,29 @@ public class InstructionTreeBuilder {
                 for(Edge edge : currentNode.edges){
                     if (edge.from == currentNode){
                         edge.weight = edge.from.numPaths;
-                        currentNode.numPaths = currentNode.numPaths + edge.to.numPaths;
+                        currentNode.numPaths += edge.to.numPaths;
                     }
                 }
             }
-            int a = 1;
+        }
+    }
+
+    private void restoreNumPaths() {
+        ListIterator<Node> li = this.allNodes.listIterator(this.allNodes.size());
+        while(li.hasPrevious()){
+            final Node currentNode = li.previous();
+            currentNode.numPaths = 0;
+            for (Edge edge : currentNode.edges) {
+                if (edge.from == currentNode) {
+                    if (currentNode.numPaths < edge.weight) {
+                        currentNode.numPaths = edge.weight;
+                        currentNode.numPaths += edge.to.numPaths;
+                    }
+                }
+            }
+        }
+        for(Node currentNode : this.allNodes){
+            currentNode.numPaths++;
         }
     }
 
