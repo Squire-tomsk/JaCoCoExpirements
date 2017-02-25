@@ -58,9 +58,56 @@ public class ControlFlowAnalyzerTest implements IProbeIdGenerator {
         method.visitInsn(Opcodes.ARETURN);
     }
 
+    private void createLoop() {
+        //TODO: create loop
+        //simple empty loop
+        Label l0 = new Label();
+        method.visitLabel(l0);
+        method.visitLineNumber(1001, l0);
+        method.visitInsn(Opcodes.ICONST_0);
+        method.visitVarInsn(Opcodes.ISTORE,1); //int i = 0;
+        Label l2 = new Label();
+        Label l1 = new Label();
+        method.visitLabel(l1);
+        method.visitLineNumber(1002, l1);
+        method.visitIntInsn(Opcodes.BIPUSH,10); //loop;
+        method.visitJumpInsn(Opcodes.IF_ICMPGE, l2); //i<10
+        method.visitIincInsn(1,1); //i++
+        method.visitJumpInsn(Opcodes.GOTO, l1);
+        method.visitLabel(l2);
+        method.visitLineNumber(1003, l2);
+        method.visitInsn(Opcodes.RETURN);
+    }
+
     @Test
     public void testInDebugger() {
-        createIfBranch();
+        createLoop();
+        /*
+        CODE           INP  NODE
+        L0:             0   A
+        CONST 0             A
+        ISTORE 1            A
+            PROBE(0)
+        L1:             2   B
+        BIPUSH 10           B
+        IF_ICMPGE L2    1   B
+        INC 1 1             B
+            PROBE(1)
+        GOTO L1         1   B
+        L2:             1   B
+            PROBE(2)
+        RETURN              C
+
+        A       PROBE NUM
+        |       0
+        v
+        B <--   1
+       / \  /
+      |   \/
+      |
+      v         2
+      C         EXIT
+      * */
         InstructionTreeBuilder.Node entry = ControlFlowAnalyzer.makeGraph(method, this);
 
         assertTrue(true);
