@@ -3,3 +3,4 @@ target/
 !org.jacoco.core/.settings/
 !org.jacoco.core.test/.settings/
 org.jacoco.agent/src/jacocoagent.jar
+*.iml

@@ -87,6 +87,7 @@ public class SourceNodeImpl extends CoverageNodeImpl implements ISourceNode {
 				.getComplexityCounter());
 		methodCounter = methodCounter.increment(child.getMethodCounter());
 		classCounter = classCounter.increment(child.getClassCounter());
+		pathCounter = pathCounter.increment(child.getAcyclicPathCounter());
 		final int firstLine = child.getFirstLine();
 		if (firstLine != UNKNOWN_LINE) {
 			final int lastLine = child.getLastLine();
@@ -97,6 +98,16 @@ public class SourceNodeImpl extends CoverageNodeImpl implements ISourceNode {
 						line.getBranchCounter(), i);
 			}
 		}
+	}
+
+	/**
+	 * Increments paths coverage by the given counter values.
+	 *
+	 * @param paths
+	 *            paths to add
+	 */
+	public void incrementPathsCounter(final ICounter paths) {
+		pathCounter = pathCounter.increment(paths);
 	}
 
 	/**
