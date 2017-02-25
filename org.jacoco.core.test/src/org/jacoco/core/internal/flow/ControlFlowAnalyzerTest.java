@@ -1,5 +1,6 @@
 package org.jacoco.core.internal.flow;
 
+import org.jacoco.core.internal.analysis.utils.InstructionTreeBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.objectweb.asm.Label;
@@ -60,7 +61,7 @@ public class ControlFlowAnalyzerTest implements IProbeIdGenerator {
     @Test
     public void testInDebugger() {
         createIfBranch();
-        ControlFlowAnalyzer.Node entry = ControlFlowAnalyzer.makeGraph(method, this);
+        InstructionTreeBuilder.Node entry = ControlFlowAnalyzer.makeGraph(method, this);
 
         assertTrue(true);
     }

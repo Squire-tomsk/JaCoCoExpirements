@@ -292,6 +292,7 @@ public class InstructionTreeBuilder {
             return edge;
         }
 
+        public int numProbe;
         public Node from;
         public Node to;
         public int weight = 0;

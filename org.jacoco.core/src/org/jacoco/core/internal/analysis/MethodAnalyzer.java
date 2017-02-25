@@ -285,7 +285,6 @@ public class MethodAnalyzer extends MethodProbesVisitor {
 					total - covered, covered) : CounterImpl.COUNTER_0_0;
 			coverage.increment(instrCounter, branchCounter, i.getLine());
 		}
-		InstructionTreeBuilder.buildInstructionsTree(instructions);
 		coverage.incrementMethodCounter();
 	}
 

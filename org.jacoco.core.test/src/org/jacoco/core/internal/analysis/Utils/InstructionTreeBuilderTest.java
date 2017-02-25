@@ -1,7 +1,6 @@
 package org.jacoco.core.internal.analysis.Utils;
 
 import org.jacoco.core.internal.analysis.utils.InstructionTreeBuilder;
-import org.jacoco.core.internal.flow.Instruction;
 import org.junit.Before;
 import org.junit.Test;
 
