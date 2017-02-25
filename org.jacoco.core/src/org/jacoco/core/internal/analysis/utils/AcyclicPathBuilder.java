@@ -7,7 +7,7 @@ import java.util.*;
 /**
  * Created by abuca on 24.02.17.
  */
-public class InstructionTreeBuilder {
+public class AcyclicPathBuilder {
 
     private Set<Edge> allEdges = null;
     private List<Node> allNodes = null;
@@ -19,6 +19,13 @@ public class InstructionTreeBuilder {
     private Set<Edge> chords;
     private List<String> paths;
 
+    public Set<Edge> getChords() {
+        return chords;
+    }
+
+    public List<String> getPaths() {
+        return paths;
+    }
 
     public void setAllEdges(Set<Edge> allEdges) {
         this.allEdges = allEdges;
@@ -36,7 +43,7 @@ public class InstructionTreeBuilder {
         this.leafs = leafs;
     }
 
-    public List<String> getAcyclicPaths(){
+    public List<String> createAllAcyclicPaths(){
         if (this.allNodes == null){
             throw new RuntimeException("Three is not defined");
         }
@@ -195,6 +202,8 @@ public class InstructionTreeBuilder {
             this.allEdges.add(dummyEdgeExit);
             dummpyEdges.add(dummyEdgeEntry);
             dummpyEdges.add(dummyEdgeExit);
+            backedge.from.edges.remove(backedge);
+            backedge.to.edges.remove(backedge);
             this.allEdges.remove(backedge);
         }
         return dummpyEdges;
