@@ -42,6 +42,9 @@ public class CoverageNodeImpl implements ICoverageNode {
 	/** Counter for classes. */
 	protected CounterImpl classCounter;
 
+	/** Counter for acyclic paths. */
+	protected CounterImpl pathCounter;
+
 	/**
 	 * Creates a new coverage data node.
 	 * 
@@ -59,6 +62,7 @@ public class CoverageNodeImpl implements ICoverageNode {
 		this.methodCounter = CounterImpl.COUNTER_0_0;
 		this.classCounter = CounterImpl.COUNTER_0_0;
 		this.lineCounter = CounterImpl.COUNTER_0_0;
+		this.pathCounter = CounterImpl.COUNTER_0_0;
 	}
 
 	/**
@@ -76,6 +80,7 @@ public class CoverageNodeImpl implements ICoverageNode {
 				.getComplexityCounter());
 		methodCounter = methodCounter.increment(child.getMethodCounter());
 		classCounter = classCounter.increment(child.getClassCounter());
+		pathCounter = pathCounter.increment(child.getAcyclicPathCounter());
 	}
 
 	/**
@@ -125,6 +130,10 @@ public class CoverageNodeImpl implements ICoverageNode {
 		return classCounter;
 	}
 
+	public ICounter getAcyclicPathCounter() {
+		return this.pathCounter;
+	}
+
 	public ICounter getCounter(final CounterEntity entity) {
 		switch (entity) {
 		case INSTRUCTION:
@@ -139,7 +148,10 @@ public class CoverageNodeImpl implements ICoverageNode {
 			return getMethodCounter();
 		case CLASS:
 			return getClassCounter();
+		case ACYCLIC_PATH:
+			return getAcyclicPathCounter();
 		}
+
 		throw new AssertionError(entity);
 	}
 
@@ -151,6 +163,7 @@ public class CoverageNodeImpl implements ICoverageNode {
 		copy.complexityCounter = CounterImpl.getInstance(complexityCounter);
 		copy.methodCounter = CounterImpl.getInstance(methodCounter);
 		copy.classCounter = CounterImpl.getInstance(classCounter);
+		copy.pathCounter = CounterImpl.getInstance(pathCounter);
 		return copy;
 	}
 

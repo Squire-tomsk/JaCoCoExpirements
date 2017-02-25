@@ -140,6 +140,10 @@ public class HTMLFormatter implements IHTMLReportContext {
 				false);
 		t.add("Cov.", Styles.CTR2, new PercentageColumn(CounterEntity.BRANCH, locale),
 				false);
+		t.add("Missed Acyclic Paths", Styles.BAR, new BarColumn(CounterEntity.ACYCLIC_PATH, locale),
+			false);
+		t.add("Cov.", Styles.CTR2, new PercentageColumn(CounterEntity.ACYCLIC_PATH, locale),
+			false);
 		addMissedTotalColumns(t, "Cxty", CounterEntity.COMPLEXITY);
 		addMissedTotalColumns(t, "Lines", CounterEntity.LINE);
 		addMissedTotalColumns(t, "Methods", CounterEntity.METHOD);
