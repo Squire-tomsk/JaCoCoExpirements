@@ -12,11 +12,14 @@
 package org.jacoco.core.internal.analysis;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jacoco.core.analysis.ICounter;
 import org.jacoco.core.analysis.IMethodCoverage;
 import org.jacoco.core.analysis.ISourceNode;
+import org.jacoco.core.internal.analysis.utils.InstructionTreeBuilder;
 import org.jacoco.core.internal.flow.IFrame;
 import org.jacoco.core.internal.flow.Instruction;
 import org.jacoco.core.internal.flow.LabelInfo;
@@ -39,6 +42,8 @@ public class MethodAnalyzer extends MethodProbesVisitor {
 	private int firstLine = ISourceNode.UNKNOWN_LINE;
 
 	private int lastLine = ISourceNode.UNKNOWN_LINE;
+
+	private Set<Instruction> instructionsSet = new HashSet<Instruction>();
 
 	// Due to ASM issue #315745 there can be more than one label per instruction
 	private final List<Label> currentLabel = new ArrayList<Label>(2);
@@ -280,6 +285,7 @@ public class MethodAnalyzer extends MethodProbesVisitor {
 					total - covered, covered) : CounterImpl.COUNTER_0_0;
 			coverage.increment(instrCounter, branchCounter, i.getLine());
 		}
+		InstructionTreeBuilder.buildInstructionsTree(instructions);
 		coverage.incrementMethodCounter();
 	}
 

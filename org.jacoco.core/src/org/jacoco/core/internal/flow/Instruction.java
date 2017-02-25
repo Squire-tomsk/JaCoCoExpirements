@@ -44,6 +44,10 @@ public class Instruction {
 		branches++;
 	}
 
+	public Instruction getPredecessor() {
+		return predecessor;
+	}
+
 	/**
 	 * Sets the given instruction as a predecessor of this instruction. This
 	 * will add an branch to the predecessor.
