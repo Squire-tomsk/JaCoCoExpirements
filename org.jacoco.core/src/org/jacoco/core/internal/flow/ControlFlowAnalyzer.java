@@ -5,6 +5,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class ControlFlowAnalyzer extends MethodProbesVisitor {
     public InstructionTreeBuilder.Node entry;
@@ -19,6 +20,7 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
         // We do not use the accept() method as ASM resets labels after every
         // call to accept()
         final ControlFlowAnalyzer lfa = new ControlFlowAnalyzer();
+        LabelFlowAnalyzer.markLabels(method);
 
         for (int i = method.tryCatchBlocks.size(); --i >= 0;) {
             method.tryCatchBlocks.get(i).accept(lfa);
@@ -31,6 +33,7 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
     private ControlFlowAnalyzer() {
         entry = new InstructionTreeBuilder.Node();
         entry.label = nodeLabel;
+        nodes = new LinkedHashMap<Label, InstructionTreeBuilder.Node>();
         nodeLabel++;
         currentNode = entry;
     }
