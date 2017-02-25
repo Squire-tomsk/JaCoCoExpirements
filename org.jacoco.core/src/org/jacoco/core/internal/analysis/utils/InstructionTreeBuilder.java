@@ -58,6 +58,34 @@ public class InstructionTreeBuilder {
         return leafs;
     }
 
+    private Set<Node> buildTestNodes2() {
+        Set<Node> leafs = new HashSet<Node>();
+        Map<Character, Node> labelsMap = new HashMap<Character, Node>();
+        char label = 'A';
+        this.allNodes = new LinkedList<Node>();
+        this.instToNodeMap = new LinkedHashMap<Instruction, Node>();
+        this.allEdges = new HashSet<Edge>();
+        for(int i =0;i<8;i++){
+            Node node = new Node();
+            node.label = label;
+            this.allNodes.add(node);
+            labelsMap.put(label,node);
+            label++;
+        }
+        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('B')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('A'), labelsMap.get('C')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('B'), labelsMap.get('D')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('C'), labelsMap.get('D')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('D'), labelsMap.get('E')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('D'), labelsMap.get('F')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('E'), labelsMap.get('G')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('G')));
+        this.allEdges.add(Edge.createEdge(labelsMap.get('F'), labelsMap.get('H')));
+        leafs.add(this.allNodes.get(this.allNodes.size()-1));
+        leafs.add(this.allNodes.get(this.allNodes.size()-2));
+        return leafs;
+    }
+
 
     //Modified DFS
     private Set<Edge> detectBackEdges(Node current,
@@ -89,9 +117,15 @@ public class InstructionTreeBuilder {
         this.allEdges = new HashSet<Edge>();
         Set<Node> leafs = initialiseEdges(instructions);*/
         //Detect backedges
-        Set<Node> leafs = buildTestNodes();
+        Set<Node> leafs = buildTestNodes2();
         this.entry = this.allNodes.get(0);
-        this.exit = getEndNode(leafs);
+        if(leafs.size() > 1){
+            this.exit = getEndNode(leafs);
+            this.allNodes.add(this.exit);
+        }
+        else{
+            this.exit = this.allNodes.get(this.allNodes.size()-1);
+        }
 
         Set<Edge> backedges = detectBackEdges(this.entry,
                                               new HashSet<Edge>(),
@@ -99,7 +133,7 @@ public class InstructionTreeBuilder {
         //Replace backedges
         Set<Edge> dummyEdges = replaceBackedges(backedges);
         //Weights calculation
-        calculateWeights(leafs);
+        calculateWeights();
         //Add exit to entry edge
         Edge exitToEntryEdge = new Edge();
         exitToEntryEdge.from = exit;
@@ -126,16 +160,16 @@ public class InstructionTreeBuilder {
         List<String> paths = new ArrayList<String>();
         for(int i = 0; i < entry.numPaths; i++){
             StringBuilder builder = getPath(i,new StringBuilder(),entry,dummyEdges,exit);
-            paths.add(builder.toString());
+            paths.add(builder.toString().replace("@",""));
         }
         return paths;
     }
 
-    private void calculateWeights(Set<Node> leafs) {
+    private void calculateWeights() {
         ListIterator<Node> li = this.allNodes.listIterator(this.allNodes.size());
         while(li.hasPrevious()){
             final Node currentNode = li.previous();
-            if(leafs.contains(currentNode)){
+            if(currentNode == this.exit){
                 currentNode.numPaths = 1;
             }
             else{
@@ -147,6 +181,7 @@ public class InstructionTreeBuilder {
                     }
                 }
             }
+            int a = 1;
         }
     }
 
@@ -173,8 +208,7 @@ public class InstructionTreeBuilder {
 
     private Node getEndNode(Set<Node> leafs) {
         Node exit = new Node();
-        exit.label = 'A';
-        exit.label--;
+        exit.label = '@';
         for(Node leaf : leafs){
             Edge edge = new Edge();
             edge.from = leaf;
@@ -215,8 +249,11 @@ public class InstructionTreeBuilder {
                 maxEdge = edge;
             }
         }
-        if(!dummyEdges.contains(maxEdge)){
+        if(!dummyEdges.contains(maxEdge) || maxEdge.to == this.exit){
             builder.append(currentNode.label);
+        }
+        if(!dummyEdges.contains(maxEdge) && maxEdge.to == exit){
+            builder.append(maxEdge.to.label);
         }
         return getPath(R-maxEdge.weight,builder,maxEdge.to,dummyEdges,exit);
     }
