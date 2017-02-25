@@ -9,10 +9,10 @@ import java.util.*;
  */
 public class AcyclicPathBuilder {
 
-    private Set<Edge> allEdges = null;
-    private List<Node> allNodes = null;
-    private Set<Edge> customSpanningTree = null;
-    private Set<Node> leafs = null;
+    private Set<Edge> allEdges;
+    private List<Node> allNodes;
+    private Set<Edge> customSpanningTree;
+    private Set<Node> leafs;
     private LinkedHashMap<Instruction, Node> instToNodeMap;
     private Node entry;
     private Node exit;
@@ -43,9 +43,16 @@ public class AcyclicPathBuilder {
         this.leafs = leafs;
     }
 
-    public List<String> build(){
-        if (this.allNodes == null){
+    public void setEntry(Node entry) {
+        this.entry = entry;
+    }
+
+    public void build(){
+        if (this.allNodes == null && this.entry == null){
             throw new RuntimeException("Three is not defined");
+        }
+        if (this.allNodes == null){
+            this.allNodes = getAllNodes();
         }
         //Get all edges
         if (this.allEdges == null){
@@ -104,12 +111,12 @@ public class AcyclicPathBuilder {
             }
         }
         //paths regeneration
-        paths = new ArrayList<String>();
+        Set <String> allPaths = new HashSet<String>();
         for(int i = 0; i < entry.numPaths; i++){
             StringBuilder builder = getPath(i,new StringBuilder(),entry,dummyEdges,exit);
-            paths.add(builder.toString().replace("@",""));
+            allPaths.add(builder.toString().replace("@",""));
         }
-        return paths;
+        paths = new ArrayList<String>(allPaths);
     }
 
     private Set<Node> detectLeafs(){
@@ -118,6 +125,54 @@ public class AcyclicPathBuilder {
             leafs.remove(edge.from);
         }
         return leafs;
+    }
+
+    //BFS based
+    private List<Node> getAllNodes(){
+        Set<Node> nodes = new HashSet<Node>();
+        Queue<Node> queue = new LinkedList<Node>();
+        queue.add(this.entry);
+        while (!queue.isEmpty()){
+            Node currentNode = queue.poll();
+            if(!nodes.contains(currentNode)){
+                nodes.add(currentNode);
+                for(Edge edge : currentNode.edges){
+                    if(edge.from == currentNode && edge.to != currentNode){
+                        queue.add(edge.to);
+                    }
+                }
+            }
+        }
+        Set<Edge> allEdges = new HashSet<Edge>();
+        List<Node> allNodes = new ArrayList<Node>();
+        for(Node node : nodes){
+            for(Edge edge : node.edges){
+                allEdges.add(edge);
+            }
+        }
+        Set<Edge> backEdges = detectBackEdges(this.entry,
+                                              new HashSet<Edge>(),
+                                              new HashSet<Node>());
+        allEdges.removeAll(backEdges);
+        while(!nodes.isEmpty()){
+            Set<Node> heads = new HashSet<Node>(nodes);
+            for(Edge edge : allEdges){
+                heads.remove(edge.to);
+            }
+            nodes.removeAll(heads);
+            for(Node node : heads){
+                allNodes.add(node);
+                Iterator<Edge> iterator = allEdges.iterator();
+                while (iterator.hasNext()){
+                    Edge edge = iterator.next();
+                    if(edge.from == node){
+                        iterator.remove();
+                    }
+                }
+            }
+
+        }
+        return allNodes;
     }
 
     private Set<Edge> getAllEdges(){

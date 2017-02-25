@@ -1,6 +1,6 @@
 package org.jacoco.core.internal.flow;
 
-import org.jacoco.core.internal.analysis.utils.InstructionTreeBuilder;
+import org.jacoco.core.internal.analysis.utils.AcyclicPathBuilder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -8,15 +8,15 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class ControlFlowAnalyzer extends MethodProbesVisitor {
-    public InstructionTreeBuilder.Node entry;
-    private InstructionTreeBuilder.Node currentNode;
-    private HashMap<Label, InstructionTreeBuilder.Node> nodes;
+    public AcyclicPathBuilder.Node entry;
+    private AcyclicPathBuilder.Node currentNode;
+    private HashMap<Label, AcyclicPathBuilder.Node> nodes;
     private int lastProbeId;
     private char nodeLabel = 'A';
 
-    public static InstructionTreeBuilder.Node exit = new InstructionTreeBuilder.Node();
+    public static AcyclicPathBuilder.Node exit = new AcyclicPathBuilder.Node();
 
-    public static InstructionTreeBuilder.Node makeGraph(final MethodNode method, final IProbeIdGenerator idGenerator) {
+    public static AcyclicPathBuilder.Node makeGraph(final MethodNode method, final IProbeIdGenerator idGenerator) {
         // We do not use the accept() method as ASM resets labels after every
         // call to accept()
         final ControlFlowAnalyzer lfa = new ControlFlowAnalyzer();
@@ -31,9 +31,9 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
     }
 
     private ControlFlowAnalyzer() {
-        entry = new InstructionTreeBuilder.Node();
+        entry = new AcyclicPathBuilder.Node();
         entry.label = nodeLabel;
-        nodes = new LinkedHashMap<Label, InstructionTreeBuilder.Node>();
+        nodes = new LinkedHashMap<Label, AcyclicPathBuilder.Node>();
         nodeLabel++;
         currentNode = entry;
     }
@@ -42,8 +42,8 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
     public void visitJumpInsnWithProbe(final int opcode, final Label label,
                                        final int probeId, final IFrame frame) {
         if( LabelInfo.isMultiTarget(label) ) {
-            InstructionTreeBuilder.Node target = addOrGetNode(label);
-            InstructionTreeBuilder.Edge edge = InstructionTreeBuilder.Edge.createEdge(currentNode, target);
+            AcyclicPathBuilder.Node target = addOrGetNode(label);
+            AcyclicPathBuilder.Edge edge = AcyclicPathBuilder.Edge.createEdge(currentNode, target);
             edge.numProbe = probeId;
         }
     }
@@ -58,8 +58,8 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
     @Override
     public void visitLabel(final Label label) {
         if( LabelInfo.needsProbe(label) ) {
-            InstructionTreeBuilder.Node target = addOrGetNode(label);
-            InstructionTreeBuilder.Edge edge = InstructionTreeBuilder.Edge.createEdge(currentNode, target);
+            AcyclicPathBuilder.Node target = addOrGetNode(label);
+            AcyclicPathBuilder.Edge edge = AcyclicPathBuilder.Edge.createEdge(currentNode, target);
             edge.numProbe = lastProbeId;
 
             currentNode = target;
@@ -69,7 +69,7 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
     @Override
     public void visitInsnWithProbe(final int opcode, final int probeId) {
         // EXIT node
-        InstructionTreeBuilder.Edge edge = InstructionTreeBuilder.Edge.createEdge(currentNode, exit);
+        AcyclicPathBuilder.Edge edge = AcyclicPathBuilder.Edge.createEdge(currentNode, exit);
         edge.numProbe = probeId;
     }
 
@@ -79,9 +79,9 @@ public class ControlFlowAnalyzer extends MethodProbesVisitor {
     }
 
 
-    private InstructionTreeBuilder.Node addOrGetNode(Label label) {
+    private AcyclicPathBuilder.Node addOrGetNode(Label label) {
         if( nodes.get(label) == null ) {
-            InstructionTreeBuilder.Node node = new InstructionTreeBuilder.Node();
+            AcyclicPathBuilder.Node node = new AcyclicPathBuilder.Node();
             node.label = nodeLabel;
             nodeLabel++;
             nodes.put(label, node);

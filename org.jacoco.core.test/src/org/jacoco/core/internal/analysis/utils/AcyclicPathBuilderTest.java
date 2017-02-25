@@ -21,6 +21,7 @@ public class AcyclicPathBuilderTest {
     public void pathTestFromPaper(){ //test from example on figure 10
         buildTestNodes();
         acyclicPathBuilder.build();
+        Assert.assertEquals(14,acyclicPathBuilder.getPaths().size());
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("AFGI"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("AFHI"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABCEFGI"));
@@ -63,6 +64,7 @@ public class AcyclicPathBuilderTest {
     public void pathTestByLike8Graph(){
         buildTestNodes2();
         acyclicPathBuilder.build();
+        Assert.assertEquals(6,acyclicPathBuilder.getPaths().size());
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABDEG"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABDFG"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABDFH"));
@@ -75,6 +77,7 @@ public class AcyclicPathBuilderTest {
     public void incValuesTestFromPaper(){ //test from example on figure 7
         buildTestNodesWithCustomSpanningTree();
         acyclicPathBuilder.build();
+        Assert.assertEquals(6,acyclicPathBuilder.getPaths().size());
         for(AcyclicPathBuilder.Edge edgeWithProbe : acyclicPathBuilder.getChords()){
             if(edgeWithProbe.from.label == 'A' && edgeWithProbe.to.label == 'C'){
                 Assert.assertEquals(0,edgeWithProbe.inc);
@@ -115,15 +118,15 @@ public class AcyclicPathBuilderTest {
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('C'), labelsMap.get('E')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('D'), labelsMap.get('E')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('E'), labelsMap.get('B')));
+        allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('E'), labelsMap.get('F')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('G')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('H')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('G'), labelsMap.get('I')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('H'), labelsMap.get('I')));
         leafs.add(allNodes.get(allNodes.size()-1));
 
-        //this.acyclicPathBuilder.setLeafs(leafs);
-        //this.acyclicPathBuilder.setAllEdges(allEdges);
-        this.acyclicPathBuilder.setAllNodes(allNodes);
+        //this.acyclicPathBuilder.setAllNodes(allNodes);
+        this.acyclicPathBuilder.setEntry(allNodes.get(0));
     }
 
     private void buildTestNodes2() {
@@ -149,9 +152,7 @@ public class AcyclicPathBuilderTest {
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('G')));
         allEdges.add(AcyclicPathBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('H')));
 
-        //acyclicPathBuilder.setLeafs(leafs);
-        //acyclicPathBuilder.setAllEdges(allEdges);
-        acyclicPathBuilder.setAllNodes(allNodes);
+        this.acyclicPathBuilder.setEntry(allNodes.get(0));
     }
 
     private void buildTestNodesWithCustomSpanningTree() {
@@ -197,14 +198,7 @@ public class AcyclicPathBuilderTest {
         edge.weight = 0;
         allEdges.add(edge);
         customSpanningTree.add(edge);
-//        edge = AcyclicPathBuilder.Edge.createEdge(labelsMap.get('F'), labelsMap.get('A'));
-//        edge.weight = 0;
-//        allEdges.add(edge);
-//        customSpanningTree.add(edge);
-        leafs.add(allNodes.get(allNodes.size()-1));
 
-        ///acyclicPathBuilder.setLeafs(leafs);
-        //acyclicPathBuilder.setAllEdges(allEdges);
         acyclicPathBuilder.setAllNodes(allNodes);
         acyclicPathBuilder.setCustomSpanningTree(customSpanningTree);
     }

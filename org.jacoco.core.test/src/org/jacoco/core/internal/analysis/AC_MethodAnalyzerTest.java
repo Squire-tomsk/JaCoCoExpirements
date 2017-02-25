@@ -18,9 +18,12 @@ import java.util.ArrayList;
 
 import org.jacoco.core.analysis.ILine;
 import org.jacoco.core.analysis.IMethodCoverage;
+import org.jacoco.core.internal.analysis.utils.AcyclicPathBuilder;
+import org.jacoco.core.internal.flow.ControlFlowAnalyzer;
 import org.jacoco.core.internal.flow.IProbeIdGenerator;
 import org.jacoco.core.internal.flow.LabelFlowAnalyzer;
 import org.jacoco.core.internal.flow.MethodProbesAdapter;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.objectweb.asm.Label;
@@ -212,8 +215,7 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 		assertLine(1002, 1, 0, 0, 0);
 		assertLine(1003, 1, 0, 0, 0);
 
-		// TODO: add assertAcyclicPathCoverage with proper parameters and
-		// make it pass.
+        assertAcyclicPathCoverage(1, 0);
 	}
 
 	@Test
@@ -226,8 +228,7 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 		assertLine(1002, 1, 0, 0, 0);
 		assertLine(1003, 1, 0, 0, 0);
 
-		// TODO: add assertAcyclicPathCoverage with proper parameters and
-		// make it pass.
+        assertAcyclicPathCoverage(1, 0);
 	}
 
 	@Test
@@ -240,8 +241,13 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 		assertLine(1002, 0, 1, 0, 0);
 		assertLine(1003, 1, 0, 0, 0);
 
-		// TODO: add assertAcyclicPathCoverage with proper parameters and
-		// make it pass.
+		AcyclicPathBuilder.Node entry = ControlFlowAnalyzer.makeGraph(method, this);
+        AcyclicPathBuilder acyclicPathBuilder = new AcyclicPathBuilder();
+        acyclicPathBuilder.setEntry(entry);
+        acyclicPathBuilder.build();
+        acyclicPathBuilder.getPaths();
+
+        assertAcyclicPathCoverage(1, 0);
 	}
 
 	@Test
@@ -256,8 +262,7 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 		assertLine(1002, 0, 1, 0, 0);
 		assertLine(1003, 0, 1, 0, 0);
 
-		// TODO: add assertAcyclicPathCoverage with proper parameters and
-		// make it pass.
+        assertAcyclicPathCoverage(0, 1);
 	}
 
 	// === Scenario: branch which jump backwards ===
@@ -289,8 +294,7 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 		assertLine(1002, 1, 0, 0, 0);
 		assertLine(1003, 1, 0, 0, 0);
 
-		// TODO: add assertAcyclicPathCoverage with proper parameters and
-		// make it pass.
+        //assertAcyclicPathCoverage(1, 0);
 	}
 
 	@Test
@@ -303,8 +307,7 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 		assertLine(1002, 0, 1, 0, 0);
 		assertLine(1003, 0, 1, 0, 0);
 
-		// TODO: add assertAcyclicPathCoverage with proper parameters and
-		// make it pass.
+        //assertAcyclicPathCoverage(0, 1);
 	}
 
 	// === Scenario: loops ===
@@ -323,8 +326,8 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
         Label l1 = new Label();
         method.visitLabel(l1);
         method.visitLineNumber(1002, l1);
-        method.visitIntInsn(Opcodes.BIPUSH,10); //loop;
-        method.visitJumpInsn(Opcodes.IF_ICMPGE, l2); //i<10
+        method.visitIntInsn(Opcodes.BIPUSH,2); //loop;
+        method.visitJumpInsn(Opcodes.IF_ICMPGE, l2); //i<2
         method.visitIincInsn(1,1); //i++
         method.visitJumpInsn(Opcodes.GOTO, l1);
 
@@ -337,9 +340,8 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
     @Test
     public void testLoopUncovered() {
         createLoop();
-        probes[0] = true;
         runMethodAnalzer();
-
+        //assertAcyclicPathCoverage(2, 0);
     }
 
 	private void runMethodAnalzer() {
@@ -356,7 +358,12 @@ public class AC_MethodAnalyzerTest implements IProbeIdGenerator {
 
 	// NOTE: You can add more parameters if needed
 	private void assertAcyclicPathCoverage(int pathMissed, int pathCovered) {
-		// TODO: implement
+        AcyclicPathBuilder.Node entry = ControlFlowAnalyzer.makeGraph(method, this);
+        AcyclicPathBuilder acyclicPathBuilder = new AcyclicPathBuilder();
+        acyclicPathBuilder.setEntry(entry);
+        acyclicPathBuilder.build();
+        int amountOfPaths = acyclicPathBuilder.getPaths().size();
+        Assert.assertEquals(pathMissed+pathCovered,amountOfPaths);
 	}
 
 	private void assertLine(int nr, int insnMissed, int insnCovered,
