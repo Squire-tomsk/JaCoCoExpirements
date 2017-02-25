@@ -20,7 +20,7 @@ public class AcyclicPathBuilderTest {
     @Test
     public void pathTestFromPaper(){ //test from example on figure 10
         buildTestNodes();
-        acyclicPathBuilder.createAllAcyclicPaths();
+        acyclicPathBuilder.build();
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("AFGI"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("AFHI"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABCEFGI"));
@@ -62,7 +62,7 @@ public class AcyclicPathBuilderTest {
  */
     public void pathTestByLike8Graph(){
         buildTestNodes2();
-        acyclicPathBuilder.createAllAcyclicPaths();
+        acyclicPathBuilder.build();
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABDEG"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABDFG"));
         Assert.assertTrue(acyclicPathBuilder.getPaths().contains("ABDFH"));
@@ -74,7 +74,7 @@ public class AcyclicPathBuilderTest {
     @Test
     public void incValuesTestFromPaper(){ //test from example on figure 7
         buildTestNodesWithCustomSpanningTree();
-        acyclicPathBuilder.createAllAcyclicPaths();
+        acyclicPathBuilder.build();
         for(AcyclicPathBuilder.Edge edgeWithProbe : acyclicPathBuilder.getChords()){
             if(edgeWithProbe.from.label == 'A' && edgeWithProbe.to.label == 'C'){
                 Assert.assertEquals(0,edgeWithProbe.inc);

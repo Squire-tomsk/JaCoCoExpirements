@@ -43,7 +43,7 @@ public class AcyclicPathBuilder {
         this.leafs = leafs;
     }
 
-    public List<String> createAllAcyclicPaths(){
+    public List<String> build(){
         if (this.allNodes == null){
             throw new RuntimeException("Three is not defined");
         }
