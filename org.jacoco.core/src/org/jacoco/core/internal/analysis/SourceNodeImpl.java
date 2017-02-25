@@ -101,6 +101,16 @@ public class SourceNodeImpl extends CoverageNodeImpl implements ISourceNode {
 	}
 
 	/**
+	 * Increments paths coverage by the given counter values.
+	 *
+	 * @param paths
+	 *            paths to add
+	 */
+	public void incrementPathsCounter(final ICounter paths) {
+		pathCounter = pathCounter.increment(paths);
+	}
+
+	/**
 	 * Increments instructions and branches by the given counter values. If a
 	 * optional line number is specified the instructions and branches are added
 	 * to the given line. The line counter is incremented accordingly.
